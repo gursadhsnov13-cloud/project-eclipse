@@ -6,20 +6,24 @@
     <title>PROJECT: ECLIPSE</title>
     <link rel="stylesheet" href="style.css">
     
-    <!-- Babylon.js Əsas Kitabxanaları -->
+    <!-- Babylon.js və Əsas Kitabxanalar -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
+
+    <!-- NİŞANGAH (Crosshair) -->
+    <div id="crosshair">+</div>
     
-    <!-- UI / Ekran Məlumatları -->
+    <!-- UI Paneli -->
     <div id="ui-container">
         <div id="instructions">
             <p><b>WASD:</b> Hərəkət / Sürmək</p>
             <p><b>E:</b> Maşına Min / Düş</p>
-            <p><b>Siçan:</b> Kamera Kontrolu (Piyada ikən)</p>
+            <p><b>Siçanın Sol Düyməsi:</b> Silahla Atəş Et (Piyada ikən)</p>
+            <p><b>Siçan:</b> Kamera Kontrolu</p>
         </div>
         <div id="mode-indicator">Rejim: Piyada (FPS)</div>
     </div>
