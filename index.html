@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PROJECT: ECLIPSE</title>
+    <title>CYBER-OUTLAW: 2088</title>
     <link rel="stylesheet" href="style.css">
     
-    <!-- Babylon.js və Əsas Kitabxanalar -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
@@ -14,18 +13,27 @@
 <body>
     <canvas id="renderCanvas"></canvas>
 
-    <!-- NİŞANGAH (Crosshair) -->
     <div id="crosshair">+</div>
     
-    <!-- UI Paneli -->
-    <div id="ui-container">
+    <!-- HUD / İDARƏETMƏ PANELSİ -->
+    <div id="hud">
+        <div id="health-bar-container">
+            <span class="hud-label">SAĞLAMLIQ:</span>
+            <div id="health-bar"><div id="health-fill"></div></div>
+        </div>
+        <div id="stats">
+            <p>💰 PULLAR: <span id="money-val">0</span> $</p>
+            <p>🎯 TƏLƏF OLAN DRONLAR: <span id="kills-val">0</span></p>
+        </div>
+        <div id="mission-box">
+            <h4>📌 AKTİV TAPŞIRIQ:</h4>
+            <p id="mission-text">Şəhərdəki Kiber-Dronları tapın və məhv edin!</p>
+        </div>
         <div id="instructions">
             <p><b>WASD:</b> Hərəkət / Sürmək</p>
             <p><b>E:</b> Maşına Min / Düş</p>
-            <p><b>Siçanın Sol Düyməsi:</b> Silahla Atəş Et (Piyada ikən)</p>
-            <p><b>Siçan:</b> Kamera Kontrolu</p>
+            <p><b>Siçanın Sol Düyməsi:</b> Atəş Aç</p>
         </div>
-        <div id="mode-indicator">Rejim: Piyada (FPS)</div>
     </div>
 
     <script src="app.js"></script>
