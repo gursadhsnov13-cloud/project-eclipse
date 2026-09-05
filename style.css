@@ -14,6 +14,19 @@ html, body {
     touch-action: none;
 }
 
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #00f3ff;
+    font-size: 28px;
+    font-weight: bold;
+    pointer-events: none;
+    text-shadow: 0 0 5px #00f3ff;
+    user-select: none;
+}
+
 #ui-container {
     position: absolute;
     top: 20px;
@@ -21,18 +34,21 @@ html, body {
     color: #fff;
     text-shadow: 0 0 5px rgba(0,255,255,0.8);
     pointer-events: none;
+    user-select: none;
 }
 
 #instructions {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
     padding: 15px;
-    border-left: 3px solid #00f3ff;
+    border-left: 4px solid #00f3ff;
     border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 #mode-indicator {
     margin-top: 10px;
     font-weight: bold;
     color: #00f3ff;
-    font-size: 1.1em;
+    font-size: 1.2em;
 }
