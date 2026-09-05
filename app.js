@@ -4,27 +4,31 @@ const engine = new BABYLON.Engine(canvas, true);
 let scene;
 let isPlayerInCar = false;
 
+// Oyunçu Statistikaları
+let playerHealth = 100;
+let money = 0;
+let kills = 0;
+
 // Obyektlər
 let playerMesh, gunMesh;
 let carMesh = null;
 let playerCamera, carCamera;
+let enemies = [];
 
-// Zərrəcik Sistemləri (Tüstü)
+// Effektlər
 let smokeSystem = null;
-
-// İdarəetmə klavişləri
 const inputMap = {};
 
 const createScene = async function () {
     scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color4(0.01, 0.01, 0.03, 1);
 
-    // 1. Fizika Mühərriki (Havok)
+    // Fizika (Havok)
     const havokInstance = await HavokPhysics();
     const havokPlugin = new BABYLON.HavokPlugin(true, havokInstance);
     scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), havokPlugin);
 
-    // 2. İşıqlandırma & Neon Atmosfer
+    // İşıqlar
     const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-0.5, -1, -0.5), scene);
     dirLight.position = new BABYLON.Vector3(50, 100, 50);
     dirLight.intensity = 0.8;
@@ -33,11 +37,7 @@ const createScene = async function () {
     cyanLight.diffuse = new BABYLON.Color3(0, 0.9, 1);
     cyanLight.intensity = 3;
 
-    const magentaLight = new BABYLON.PointLight("magentaLight", new BABYLON.Vector3(20, 15, -20), scene);
-    magentaLight.diffuse = new BABYLON.Color3(1, 0, 0.6);
-    magentaLight.intensity = 3;
-
-    // 3. Yaş Asfalt Küçə
+    // Yaş Asfalt Küçə
     const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 500, height: 500 }, scene);
     const groundMat = new BABYLON.PBRMaterial("groundMat", scene);
     groundMat.albedoColor = new BABYLON.Color3(0.04, 0.04, 0.06);
@@ -46,11 +46,11 @@ const createScene = async function () {
     ground.material = groundMat;
     new BABYLON.PhysicsAggregate(ground, BABYLON.PhysicsShapeType.BOX, { mass: 0 }, scene);
 
-    // 4. Kiber-Şəhər Və Yağış
+    // Kiber Şəhər & Yağış
     createCyberCity(scene);
     createRainEffect(scene);
 
-    // 5. Personaj Və FPS Kamera
+    // Personaj & FPS Kamera
     playerMesh = BABYLON.MeshBuilder.CreateCapsule("player", { height: 1.8, radius: 0.4 }, scene);
     playerMesh.position = new BABYLON.Vector3(0, 1, 0);
     playerMesh.visibility = 0;
@@ -59,7 +59,7 @@ const createScene = async function () {
     playerCamera.parent = playerMesh;
     playerCamera.attachControl(canvas, true);
 
-    // Silah Modeli (Piyada Rejimi üçün)
+    // Silah
     gunMesh = BABYLON.MeshBuilder.CreateBox("gun", { width: 0.1, height: 0.15, depth: 0.6 }, scene);
     gunMesh.parent = playerCamera;
     gunMesh.position = new BABYLON.Vector3(0.3, -0.25, 0.6);
@@ -67,7 +67,7 @@ const createScene = async function () {
     gunMat.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
     gunMesh.material = gunMat;
 
-    // 6. 3D Avtomobil Və Drift Tüstüsü
+    // Maşın & Drift Tüstüsü
     carMesh = BABYLON.MeshBuilder.CreateBox("carRoot", { width: 2, height: 1, depth: 4 }, scene);
     carMesh.position = new BABYLON.Vector3(5, 0.5, 10);
     carMesh.visibility = 0;
@@ -87,7 +87,10 @@ const createScene = async function () {
     carCamera.radius = 8;
     carCamera.heightOffset = 2;
 
-    // 7. Klaviaturanı Və Siçanı Dinləmək
+    // Düşmən Dronları Yaratmaq
+    spawnEnemies(scene, 5);
+
+    // Klaviaturanı Dinləmək
     scene.actionManager = new BABYLON.ActionManager(scene);
     scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, (evt) => {
         inputMap[evt.sourceEvent.key.toLowerCase()] = true;
@@ -99,17 +102,18 @@ const createScene = async function () {
         inputMap[evt.sourceEvent.key.toLowerCase()] = false;
     }));
 
-    // Atəş Etmək (Sol Düymə)
+    // Atəş Etmək
     window.addEventListener("pointerdown", (evt) => {
         if (evt.button === 0 && !isPlayerInCar) {
             shootGun(scene, playerCamera);
         }
     });
 
-    // 8. Kadra Dair Hərəkət Tənzimləməsi
+    // Kadra Dair Hərəkətlər və AI Logikası
     scene.onBeforeRenderObservable.add(() => {
+        // Maşın İdarəetməsi
         if (isPlayerInCar && carMesh) {
-            const speed = 32;
+            const speed = 35;
             const turnSpeed = 0.04;
             let isMoving = false;
             let isTurning = false;
@@ -139,12 +143,49 @@ const createScene = async function () {
         } else if (smokeSystem) {
             smokeSystem.stop();
         }
+
+        // Dron AI Və Oyunçuya Hücum
+        enemies.forEach((enemy) => {
+            if (enemy && !enemy.isDead) {
+                // Dron oyunda oyunçuya tərəf yavaş-yavaş uçur
+                const targetPos = isPlayerInCar ? carMesh.position : playerMesh.position;
+                const direction = targetPos.subtract(enemy.position).normalize();
+                enemy.position.addInPlace(direction.scale(0.05));
+
+                // Oyunçuya çox yaxınlaşsa zərər vurur
+                const dist = BABYLON.Vector3.Distance(enemy.position, targetPos);
+                if (dist < 2.5) {
+                    takeDamage(0.3);
+                }
+            }
+        });
     });
 
     return scene;
 };
 
-// Atəş Mexanikası (Lazer Güllə Effekti)
+// Düşmən Dronlarının Yaranması
+function spawnEnemies(scene, count) {
+    const enemyMat = new BABYLON.StandardMaterial("eMat", scene);
+    enemyMat.emissiveColor = new BABYLON.Color3(1, 0, 0.2);
+
+    for (let i = 0; i < count; i++) {
+        const drone = BABYLON.MeshBuilder.CreateSphere(`drone_${i}`, { diameter: 1.2 }, scene);
+        drone.material = enemyMat;
+        
+        // Şəhərin təsadüfi nöqtələrində yaransınlar
+        drone.position = new BABYLON.Vector3(
+            (Math.random() - 0.5) * 100,
+            2 + Math.random() * 3,
+            (Math.random() - 0.5) * 100
+        );
+
+        drone.isDead = false;
+        enemies.push(drone);
+    }
+}
+
+// Atəş Və Dronları Vurmaq
 function shootGun(scene, camera) {
     const bullet = BABYLON.MeshBuilder.CreateSphere("bullet", { diameter: 0.15 }, scene);
     const bulletMat = new BABYLON.StandardMaterial("bMat", scene);
@@ -153,18 +194,51 @@ function shootGun(scene, camera) {
 
     bullet.position = camera.globalPosition.clone();
     const ray = camera.getForwardRay();
-    const force = ray.direction.scale(100);
+    const force = ray.direction.scale(120);
 
-    scene.registerBeforeRender(function () {
-        bullet.position.addInPlace(force.scale(0.02));
-    });
+    const timer = setInterval(() => {
+        bullet.position.addInPlace(force.scale(0.015));
+
+        // Dronlarla toqquşmanı yoxlamaq
+        enemies.forEach((enemy) => {
+            if (!enemy.isDead && BABYLON.Vector3.Distance(bullet.position, enemy.position) < 1.0) {
+                enemy.isDead = true;
+                enemy.dispose();
+                bullet.dispose();
+                clearInterval(timer);
+
+                // Mükafatlar
+                kills++;
+                money += 150;
+                document.getElementById("kills-val").innerText = kills;
+                document.getElementById("money-val").innerText = money;
+
+                // Tapşırıq yoxlanışı
+                if (kills >= 5) {
+                    document.getElementById("mission-text").innerText = "TƏBRİKLƏR! Bütün dronlar məhv edildi. +1000$ mükafat!";
+                }
+            }
+        });
+    }, 16);
 
     setTimeout(() => {
+        clearInterval(timer);
         bullet.dispose();
     }, 1000);
 }
 
-// Yağış Sistemi
+// Xəsarət Almaq Mexanikası
+function takeDamage(amount) {
+    playerHealth = Math.max(0, playerHealth - amount);
+    document.getElementById("health-fill").style.width = playerHealth + "%";
+
+    if (playerHealth <= 0) {
+        alert("SİZ MƏHV EDİLDİNİZ! Səhifə yenilənir...");
+        location.reload();
+    }
+}
+
+// Yağış Effekti
 function createRainEffect(scene) {
     const rainParticle = new BABYLON.ParticleSystem("rain", 1500, scene);
     rainParticle.particleTexture = new BABYLON.Texture("https://assets.babylonjs.com/textures/flare.png", scene);
@@ -205,7 +279,7 @@ function createSmokeEffect(scene, parentMesh) {
     return smokeSystem;
 }
 
-// Kiber-Şəhər
+// Şəhər
 function createCyberCity(scene) {
     const buildingMat = new BABYLON.PBRMaterial("bldgMat", scene);
     buildingMat.albedoColor = new BABYLON.Color3(0.02, 0.02, 0.04);
@@ -241,8 +315,6 @@ function toggleVehicleEnterExit() {
             gunMesh.setEnabled(false);
             document.getElementById("crosshair").style.display = "none";
             scene.activeCamera = carCamera;
-            document.getElementById("mode-indicator").innerText = "Rejim: Kiber-Avtomobil (WASD ilə sürün / Drift edin)";
-            document.getElementById("mode-indicator").style.color = "#ff0055";
         }
     } else {
         isPlayerInCar = false;
@@ -250,8 +322,6 @@ function toggleVehicleEnterExit() {
         gunMesh.setEnabled(true);
         document.getElementById("crosshair").style.display = "block";
         scene.activeCamera = playerCamera;
-        document.getElementById("mode-indicator").innerText = "Rejim: Piyada (FPS / Silah Aktivdir)";
-        document.getElementById("mode-indicator").style.color = "#00f3ff";
     }
 }
 
